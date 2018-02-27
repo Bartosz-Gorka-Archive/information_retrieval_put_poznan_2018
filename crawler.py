@@ -33,7 +33,8 @@ class LIFO_Policy:
 
     def getURL(self, c, iteration):
         if len(self.queque) == 0:
-            return None
+            self.queque = list([s for s in c.seedURLs])
+            return self.queque.pop()
         else:
             return self.queque.pop()
 
@@ -51,7 +52,8 @@ class FIFO_Policy:
 
     def getURL(self, c, iteration):
         if len(self.queque) == 0:
-            return None
+            self.queque = list([s for s in c.seedURLs])
+            return self.queque.pop(0)
         else:
             return self.queque.pop(0)
 
@@ -83,8 +85,8 @@ class Container:
         self.incomingURLs = {}
         # Class which maintains a queue of urls to visit.
         # self.generatePolicy = Dunny_Policy()
-        # self.generatePolicy = LIFO_Policy(self)
-        self.generatePolicy = FIFO_Policy(self)
+        self.generatePolicy = LIFO_Policy(self)
+        # self.generatePolicy = FIFO_Policy(self)
         # Page (URL) to be fetched next
         self.toFetch = None
         # Number of iterations of a crawler.

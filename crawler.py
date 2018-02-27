@@ -45,6 +45,41 @@ class LIFO_Policy:
             self.queque.append(l)
 
 
+# LIFO policy with cycles check. Returns last element.
+class LIFO_Cycle_Policy:
+    def __init__(self, c):
+        self.queque = list([s for s in c.seedURLs])
+        self.fetched = set([])
+
+    def getURL(self, c, iteration):
+        if len(self.queque) == 0:
+            self.queque = list([s for s in c.seedURLs])
+            link = self.queque.pop()
+            self.fetched = set([link])
+            return link
+        else:
+            while True:
+                link = self.queque.pop()
+                if link in self.fetched:
+                    if len(self.queque) == 0:
+                        self.queque = list([s for s in c.seedURLs])
+                        link = self.queque.pop()
+                        self.fetched = set([link])
+                        return link
+                    else:
+                        continue
+                else:
+                    self.fetched.add(link)
+                    return link
+
+
+    def updateURLs(self, c, newURLs, newURLsWD, iteration):
+        temporaryURLsList = list(newURLs.copy())
+        temporaryURLsList.sort(key=lambda url: url[len(url) - url[::-1].index('/'):])
+        for l in temporaryURLsList:
+            self.queque.append(l)
+
+
 # FIFO policy. Returns first element.
 class FIFO_Policy:
     def __init__(self, c):
@@ -71,7 +106,7 @@ class Container:
         # The name of the crawler"
         self.crawlerName = "IRbot"
         # Example ID
-        self.example = "exercise1"
+        self.example = "exercise2"
         # Root (host) page
         self.rootPage = "http://www.cs.put.poznan.pl/mtomczyk/ir/lab1/" + self.example
         # Initial links to visit
@@ -85,7 +120,8 @@ class Container:
         self.incomingURLs = {}
         # Class which maintains a queue of urls to visit.
         # self.generatePolicy = Dunny_Policy()
-        self.generatePolicy = LIFO_Policy(self)
+        # self.generatePolicy = LIFO_Policy(self)
+        self.generatePolicy = LIFO_Cycle_Policy(self)
         # self.generatePolicy = FIFO_Policy(self)
         # Page (URL) to be fetched next
         self.toFetch = None

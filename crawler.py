@@ -4,11 +4,12 @@
 # Institute of Computing Science
 # Laboratory of Intelligent Decision Support Systems
 #-------------------------------------------------------------------------
-import urllib.request as req
-import sys
 import os
+import sys
+import operator
+import numpy as np
+import urllib.request as req
 from html.parser import HTMLParser
-
 
 #-------------------------------------------------------------------------
 ### generatePolicy classes
@@ -73,6 +74,67 @@ class LIFO_Cycle_Policy:
                     return link
 
 
+def countAuthority(incomingURLs, seedURLs):
+    start_not_used_links = set(seedURLs) - set(incomingURLs)
+    links_size = len(incomingURLs)
+    authority_list = np.zeros((links_size + len(start_not_used_links), 2), dtype = object)
+    counter = 0
+
+    for ind, key in enumerate(incomingURLs):
+        size = len(incomingURLs[key]) + 1
+        authority_list[ind][0] = size
+        authority_list[ind][1] = key
+        counter += size
+
+    for ind, key in enumerate(start_not_used_links):
+        authority_list[ind + links_size][0] = 1
+        authority_list[ind + links_size][1] = key
+        counter += 1
+
+    sorted_links = list(authority_list)
+    sorted_links.sort(key = operator.itemgetter(0, 1), reverse = True)
+    return sorted_links, counter
+
+
+def select_link(sorted_links, counter):
+    p_list = np.zeros(len(sorted_links))
+    for ind, link in enumerate(sorted_links):
+        p_list[ind] = link[0] / counter
+
+    choice = np.random.choice(len(sorted_links), 1, p = p_list)[0]
+    return sorted_links[choice][1]
+
+
+# LIFO Authority Policy - count incoming URLs
+class LIFO_Authority_Policy:
+    def __init__(self, c):
+        self.queque = list([s for s in c.seedURLs])
+        self.fetched = set([])
+
+    def getURL(self, c, iteration):
+        if len(self.queque) == 0:
+            self.queque = list()
+            sorted_links, counter = countAuthority(c.incomingURLs, c.seedURLs)
+            link = select_link(sorted_links, counter)
+            self.fetched = set([link])
+            return link
+        else:
+            while True:
+                link = self.queque.pop()
+                if link in self.fetched:
+                    if len(self.queque) == 0:
+                        self.queque = list()
+                        sorted_links, counter = countAuthority(c.incomingURLs, c.seedURLs)
+                        link = select_link(sorted_links, counter)
+                        self.fetched = set([link])
+                        return link
+                    else:
+                        continue
+                else:
+                    self.fetched.add(link)
+                    return link
+
+
     def updateURLs(self, c, newURLs, newURLsWD, iteration):
         temporaryURLsList = list(newURLs.copy())
         temporaryURLsList.sort(key=lambda url: url[len(url) - url[::-1].index('/'):])
@@ -106,12 +168,11 @@ class Container:
         # The name of the crawler"
         self.crawlerName = "IRbot"
         # Example ID
-        self.example = "exercise2"
+        self.example = "exercise3"
         # Root (host) page
         self.rootPage = "http://www.cs.put.poznan.pl/mtomczyk/ir/lab1/" + self.example
         # Initial links to visit
-        self.seedURLs = ["http://www.cs.put.poznan.pl/mtomczyk/ir/lab1/"
-            + self.example + "/s0.html"]
+        self.seedURLs = ["http://www.cs.put.poznan.pl/mtomczyk/ir/lab1/" + self.example + "/s0.html"]
         # Maintained URLs
         self.URLs = set([])
         # Outgoing URLs (from -> list of outgoing links)
@@ -121,12 +182,13 @@ class Container:
         # Class which maintains a queue of urls to visit.
         # self.generatePolicy = Dunny_Policy()
         # self.generatePolicy = LIFO_Policy(self)
-        self.generatePolicy = LIFO_Cycle_Policy(self)
+        # self.generatePolicy = LIFO_Cycle_Policy(self)
+        self.generatePolicy = LIFO_Authority_Policy(self)
         # self.generatePolicy = FIFO_Policy(self)
         # Page (URL) to be fetched next
         self.toFetch = None
         # Number of iterations of a crawler.
-        self.iterations = 10 # Original 3
+        self.iterations = 50 # Original 3
 
         # If true: store all crawled html pages in the provided directory.
         self.storePages = True
@@ -142,9 +204,8 @@ class Container:
         self.storeIncomingURLs = True
         self.storedIncomingURLs = "/" + self.example + "/incoming/"
 
-
         # If True: debug
-        self.debug = True
+        self.debug = False
 
 
 class Parser(HTMLParser):
@@ -155,6 +216,7 @@ class Parser(HTMLParser):
     def handle_starttag(self, tag, attrs):
         if tag == 'a':
             self.output_list.append(dict(attrs).get('href'))
+
 
 def main():
 

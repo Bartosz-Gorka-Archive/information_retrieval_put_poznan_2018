@@ -56,16 +56,15 @@ public class Exercise2 {
         AutoDetectParser parser = new AutoDetectParser();
         BodyContentHandler handler = new BodyContentHandler(250000);
         Metadata metadata = new Metadata();
-
         parser.parse(inp, handler, metadata);
-        String content = handler.toString();
-
-        langDetector.reset();
-        langDetector.addText(content);
-        LanguageResult lang = langDetector.detect();
 
         Tika tika = new Tika();
         String mimeType = tika.detect(file);
+        String tikaContent = tika.parseToString(file);
+
+        langDetector.reset();
+        langDetector.addText(tikaContent);
+        LanguageResult lang = langDetector.detect();
 
         String creatorName = metadata.get(TikaCoreProperties.CREATOR);
         DateTime creationDate = new DateTime(metadata.get(TikaCoreProperties.CREATED));
@@ -78,7 +77,7 @@ public class Exercise2 {
                 creationDate.toDate(),
                 lastModification.toDate(),
                 mimeType,
-                content
+                tikaContent
         );
     }
 

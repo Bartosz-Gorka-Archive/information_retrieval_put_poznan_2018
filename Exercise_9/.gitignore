@@ -1,0 +1,7 @@
+# IDE
+.idea/
+
+# Artifacts
+__pycache__/
+.ipynb_checkpoints/
+findspark.py

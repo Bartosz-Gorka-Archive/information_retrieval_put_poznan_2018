@@ -2,17 +2,6 @@
 Log analytics
 
 ```python
-%matplotlib inline
-from __future__ import division
-import numpy as np
-import matplotlib.pyplot as plt
-import datetime
-```
-
-1) Log file is loaded
-
-
-```python
 file = open("log.txt", "r")
 lines = file.readlines()
 for l in range(3): print(lines[l][:-1])
@@ -123,7 +112,7 @@ LINKS = [
 
 ```python
 # Task 1 - Sessions
-MAX_SESSION_TIME = 15 * 60 # 15 minutes
+MAX_SESSION_TIME = 2_200 # seconds - 36 minutes, 40 seconds
 ip_addresses_with_requests = {}
 SESSIONS = []
 
@@ -143,7 +132,7 @@ for key, val in ip_addresses_with_requests.items():
 
     for visit in val:
         # Request inside session
-        if (stopTime + MAX_SESSION_TIME) > visit.time:
+        if (startTime + MAX_SESSION_TIME) > visit.time:
             currentPageID = PAGES.index(visit.page)
 
             # Last page and current with link
